@@ -3,7 +3,7 @@
 1. 
 ```bash
 git clone <repo url>
-cd <repo>
+cd <repo/116A-final-proj> # Make sure to cd into the inner 116A folder.
 npm install
 npm run dev
 ```
