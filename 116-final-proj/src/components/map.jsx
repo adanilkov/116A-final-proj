@@ -46,7 +46,7 @@ export default function MapVis() {
   }, []);
 
   return (
-    <div className="map-container relative">
+    <div className="map-container relative border border-white p-2">
       <svg id="map"></svg>
       <MapTooltip tooltipContent={tooltipContent} position={tooltipPosition} />
     </div>

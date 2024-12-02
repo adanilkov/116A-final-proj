@@ -4,28 +4,32 @@ import MapVis from "@/components/map";
 
 export default function Home() {
   return (
-    
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
+    <div className="grid grid-rows-[auto_1fr_auto] min-h-screen p-8 gap-8 sm:p-20 font-[family-name:var(--font-geist-sans)]">
+      {/* Header
+      <header className="row-start-1 flex justify-between items-center">
+        <Dropdown />
+      </header> */}
 
+      {/* Main Content */}
+      <main className="row-start-2 flex flex-row gap-8">
+        {/* Left: Map Visualization */}
+        <div className="flex-1 h-full">
+          <MapVis />
+        </div>
 
-
-        <MapVis />
-
-
-        {/* <Dropdown />
-        <Image
-          className="map"
-          src="/us.svg"
-          alt="MAP logo"
-          width={800}
-          height={38}
-          priority
-        /> */}
-       
+        {/* Right: Visualization Placeholder */}
+        <div className="flex-1 h-full border border-white bg-black p-2">
+          <p>Right-side Visualization Placeholder</p>
+        </div>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
+
+      {/* Bottom Visualization */}
+      <section className="row-start-3 border border-white bg-black">
+        <p>Bottom-center Visualization Placeholder</p>
+      </section>
+
+      {/* Footer */}
+      <footer className="row-start-4 flex gap-6 flex-wrap items-center justify-center">
         <a
           className="flex items-center gap-2 hover:underline hover:underline-offset-4"
           href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
