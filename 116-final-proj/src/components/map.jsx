@@ -1,10 +1,14 @@
 'use client';
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import * as d3 from "d3";
 import geoData from './counties.json'; // Importing the GeoJSON file
+import MapTooltip from "@/components/utils/map_tooltip";
 
 export default function MapVis() {
+  const [tooltipContent, setTooltipContent] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+
   useEffect(() => {
     // Set up the map visualization with D3
     const width = 800;
@@ -25,20 +29,26 @@ export default function MapVis() {
       .join("path")
       .attr("d", pathGenerator)
       .attr("class", "state")
-      .attr("fill", "steelblue")
+      .attr("fill", "black")
       .attr("stroke", "white")
       .on("mouseover", function (event, d) {
         d3.select(this).attr("fill", "orange");
-        console.log("Hovered on:", d.properties);
+        setTooltipContent(d.properties.name || "Unknown"); // Example: Show county/state name
+        setTooltipPosition({ x: event.pageX, y: event.pageY });
+      })
+      .on("mousemove", function (event) {
+        setTooltipPosition({ x: event.pageX, y: event.pageY }); // Update position on mouse move
       })
       .on("mouseout", function () {
-        d3.select(this).attr("fill", "steelblue");
+        d3.select(this).attr("fill", "black");
+        setTooltipContent(null); // Hide tooltip on mouse out
       });
   }, []);
 
   return (
-    <div className="map-container">
+    <div className="map-container relative border border-white p-2">
       <svg id="map"></svg>
+      <MapTooltip tooltipContent={tooltipContent} position={tooltipPosition} />
     </div>
   );
 }
