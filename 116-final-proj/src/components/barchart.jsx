@@ -56,6 +56,15 @@ const SegmentedBarChart = () => {
       cumulative += d.value;
       return segment;
     });
+
+    svg.append('text')
+      .attr('x', xScale(segments[0].end))
+      .attr('y', -15)
+      .attr('text-anchor', 'middle')
+      .attr('font-size', '10px')
+      .attr('fill', 'black')
+      .text('Highest Buyer Percentage');
+
     
     // Create segments
     const bars = svg.selectAll('.segment')
@@ -88,6 +97,10 @@ const SegmentedBarChart = () => {
         .attr('opacity', 1);
       svg.selectAll('.tooltip').remove();
     });
+
+    bars.transition()
+      .duration(500)
+      .attr('width', d => Math.abs(xScale(d.value) - xScale(0)));
     
     // Add year label
     svg.append('text')
