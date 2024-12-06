@@ -36,7 +36,7 @@ export default function MapVis() {
       .attr("stroke", "white")
       .on("mouseover", function (event, d) {
         d3.select(this).attr("fill", "orange");
-        setTooltipContent(d.properties.name || "Unknown"); // Show county/state name
+        setTooltipContent(d.properties.NAME); // Example: Show county/state name
         setTooltipPosition({ x: event.pageX, y: event.pageY });
       })
       .on("mousemove", function (event) {
