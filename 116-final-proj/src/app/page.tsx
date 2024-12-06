@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Dropdown from "@/components/dropdown";
 import MapVis from "@/components/map";
+import BarVis from "@/components/barchart";
 
 export default function Home() {
   return (
@@ -12,7 +13,7 @@ export default function Home() {
 
 
         <MapVis />
-
+        <BarVis />
 
         {/* <Dropdown />
         <Image
