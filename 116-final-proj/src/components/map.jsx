@@ -22,12 +22,15 @@ export default function MapVis() {
       .attr('width', width)
       .attr('height', height);
 
+    // Add a `g` container for zoom
+    const zoomContainer = svg.append("g");
+
     // Set up the projection
     const projection = d3.geoAlbersUsa().fitSize([width, height], geoData);
     const pathGenerator = d3.geoPath().projection(projection);
 
     // Draw the polygons from the GeoJSON data
-    svg.selectAll("path")
+    zoomContainer.selectAll("path")
       .data(geoData.features)
       .join("path")
       .attr("d", pathGenerator)
@@ -37,15 +40,26 @@ export default function MapVis() {
       .on("mouseover", function (event, d) {
         d3.select(this).attr("fill", "orange");
         setTooltipContent(d.properties.NAME); // Example: Show county/state name
-        setTooltipPosition({ x: event.pageX, y: event.pageY });
+        setTooltipPosition({ x: event.clientX, y: event.clientY });
       })
       .on("mousemove", function (event) {
-        setTooltipPosition({ x: event.pageX, y: event.pageY }); // Update tooltip position
+        setTooltipPosition({ x: event.clientX, y: event.clientY }); // Update tooltip position
       })
       .on("mouseout", function () {
         d3.select(this).attr("fill", "black");
         setTooltipContent(null); // Hide tooltip on mouse out
       });
+
+    // Add zoom behavior
+    const zoom = d3.zoom()
+      .scaleExtent([1, 8]) // Minimum and maximum zoom levels
+      .translateExtent([[0, 0], [width, height]]) // Pan boundaries
+      .on("zoom", (event) => {
+        zoomContainer.attr("transform", event.transform); // Apply zoom and pan transformations
+      });
+
+    // Apply zoom to the SVG
+    svg.call(zoom);
 
     // Define the brushes
     const brush1 = d3.brush()
@@ -57,11 +71,11 @@ export default function MapVis() {
       .on("brush end", brushed2);
 
     // Append brush elements to the SVG
-    const brush1Group = svg.append("g")
+    const brush1Group = zoomContainer.append("g")
       .attr("class", "brush brush1")
       .call(brush1);
 
-    const brush2Group = svg.append("g")
+    const brush2Group = zoomContainer.append("g")
       .attr("class", "brush brush2")
       .call(brush2)
       .style("display", "none"); // Hide brush 2 initially
