@@ -63,14 +63,52 @@ export default function MapVis({ onBrush }) {
         zoomContainer.attr("transform", event.transform);
       });
 
-    // Define brush behavior for brush 1 (currently no linked visualization)
+    // Define brush behavior for brush 1
     const brush1 = d3.brush()
       .extent([[0, 0], [width, height]])
       .on("start brush", (event) => {
         const selection = event.selection;
         if (selection) {
           const [[x0, y0], [x1, y1]] = selection;
-          // Brush 1 logic (visualization will be added later)
+
+          const selectedRegions = geoData.features.filter((d) => {
+            const centroid = projection(d3.geoCentroid(d));
+            return centroid && 
+                   centroid[0] >= x0 && 
+                   centroid[0] <= x1 && 
+                   centroid[1] >= y0 && 
+                   centroid[1] <= y1;
+          });
+
+          // Highlight selected regions
+          mapPaths.attr("fill", (d) => selectedRegions.includes(d) ? "#ff6347" : "#FFFFFF");
+        }
+      })
+      .on("end", (event) => {
+        const selection = event.selection;
+        if (selection) {
+          const [[x0, y0], [x1, y1]] = selection;
+      
+          const selectedRegions = geoData.features.filter((d) => {
+            const centroid = projection(d3.geoCentroid(d));
+            return (
+              centroid &&
+              centroid[0] >= x0 &&
+              centroid[0] <= x1 &&
+              centroid[1] >= y0 &&
+              centroid[1] <= y1
+            );
+          });
+      
+          console.log("Selected Regions:", selectedRegions); // Debugging
+          if (typeof onBrush === "function") {
+            onBrush(selectedRegions); // Pass selected regions to parent
+          }
+        } else {
+          console.log("Brush cleared"); // Debugging
+          if (typeof onBrush === "function") {
+            onBrush([]); // Clear selection
+          }
         }
       });
       
