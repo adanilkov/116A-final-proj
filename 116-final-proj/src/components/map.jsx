@@ -6,136 +6,147 @@ import geoData from './counties.json'; // Importing the GeoJSON file
 import MapTooltip from "@/components/utils/map_tooltip";
 import { Switch } from '@headlessui/react';
 
-export default function MapVis() {
+export default function MapVis({ onBrush }) {
   const [tooltipContent, setTooltipContent] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  const [brush1Selection, setBrush1Selection] = useState([]);
-  const [brush2Selection, setBrush2Selection] = useState([]);
-  const [isBrush1Active, setIsBrush1Active] = useState(true); // Tracks which brush is active
+  const [isBrush1Active, setIsBrush1Active] = useState(true);
+  const [isZoomMode, setIsZoomMode] = useState(true);
 
   useEffect(() => {
     const width = 800;
     const height = 600;
 
-    // Create SVG element for the map
+    // Select the SVG 
     const svg = d3.select('#map')
       .attr('width', width)
-      .attr('height', height);
+      .attr('height', height)
+      .style("background", "#000000");
 
-    // Add a `g` container for zoom
-    const zoomContainer = svg.append("g");
+    // Ensure clean slate for containers
+    svg.selectAll(".zoom-container").remove();
+    svg.selectAll(".brush-container").remove();
 
-    // Set up the projection
+    // Create new containers
+    const zoomContainer = svg.append("g").attr("class", "zoom-container");
+    const brushContainer = svg.append("g").attr("class", "brush-container");
+
+    // Set up projection and path generator
     const projection = d3.geoAlbersUsa().fitSize([width, height], geoData);
     const pathGenerator = d3.geoPath().projection(projection);
 
-    // Draw the polygons from the GeoJSON data
-    zoomContainer.selectAll("path")
+    // Draw map regions
+    const mapPaths = zoomContainer.selectAll("path")
       .data(geoData.features)
       .join("path")
       .attr("d", pathGenerator)
-      .attr("class", "state")
-      .attr("fill", "black")
-      .attr("stroke", "white")
+      .attr("fill", "#FFFFFF")
+      .attr("stroke", "#555")
+      .attr("stroke-width", 0.5)
       .on("mouseover", function (event, d) {
-        d3.select(this).attr("fill", "orange");
-        setTooltipContent(d.properties.NAME); // Example: Show county/state name
+        d3.select(this).attr("fill", "#ffcc00");
+        setTooltipContent(d.properties.NAME);
         setTooltipPosition({ x: event.clientX, y: event.clientY });
       })
       .on("mousemove", function (event) {
-        setTooltipPosition({ x: event.clientX, y: event.clientY }); // Update tooltip position
+        setTooltipPosition({ x: event.clientX, y: event.clientY });
       })
       .on("mouseout", function () {
-        d3.select(this).attr("fill", "black");
-        setTooltipContent(null); // Hide tooltip on mouse out
+        d3.select(this).attr("fill", "#FFFFFF");
+        setTooltipContent(null);
       });
 
-    // Add zoom behavior
+    // Define zoom behavior
     const zoom = d3.zoom()
-      .scaleExtent([1, 8]) // Minimum and maximum zoom levels
-      .translateExtent([[0, 0], [width, height]]) // Pan boundaries
+      .scaleExtent([1, 8])
+      .translateExtent([[0, 0], [width, height]])
       .on("zoom", (event) => {
-        zoomContainer.attr("transform", event.transform); // Apply zoom and pan transformations
+        zoomContainer.attr("transform", event.transform);
       });
 
-    // Apply zoom to the SVG
-    svg.call(zoom);
-
-    // Define the brushes
+    // Define brush behavior for brush 1 (currently no linked visualization)
     const brush1 = d3.brush()
       .extent([[0, 0], [width, height]])
-      .on("brush end", brushed1);
+      .on("start brush", (event) => {
+        const selection = event.selection;
+        if (selection) {
+          const [[x0, y0], [x1, y1]] = selection;
+          // Brush 1 logic (visualization will be added later)
+        }
+      });
+      
 
+    // Define brush behavior for brush 2 (currently no linked visualization)
     const brush2 = d3.brush()
       .extent([[0, 0], [width, height]])
-      .on("brush end", brushed2);
+      .on("start brush", (event) => {
+        const selection = event.selection;
+        if (selection) {
+          const [[x0, y0], [x1, y1]] = selection;
+          // Brush 2 logic (visualization will be added later)
+        }
+      });
 
-    // Append brush elements to the SVG
-    const brush1Group = zoomContainer.append("g")
-      .attr("class", "brush brush1")
-      .call(brush1);
+    // Update behavior function
+    const updateBehavior = () => {
+      svg.on(".zoom", null);
+      brushContainer.selectAll("*").remove();
 
-    const brush2Group = zoomContainer.append("g")
-      .attr("class", "brush brush2")
-      .call(brush2)
-      .style("display", "none"); // Hide brush 2 initially
-
-    // Brush event handlers
-    function brushed1(event) {
-      const selection = event.selection;
-      if (selection) {
-        const [[x0, y0], [x1, y1]] = selection;
-        const selectedRegions = geoData.features.filter(d => {
-          const centroid = projection(d3.geoCentroid(d));
-          return centroid && centroid[0] >= x0 && centroid[0] <= x1 && centroid[1] >= y0 && centroid[1] <= y1;
-        });
-        setBrush1Selection(selectedRegions);
+      if (isZoomMode) {
+        svg.call(zoom);
+      } else {
+        brushContainer.call(isBrush1Active ? brush1 : brush2);
       }
-    }
+    };
 
-    function brushed2(event) {
-      const selection = event.selection;
-      if (selection) {
-        const [[x0, y0], [x1, y1]] = selection;
-        const selectedRegions = geoData.features.filter(d => {
-          const centroid = projection(d3.geoCentroid(d));
-          return centroid && centroid[0] >= x0 && centroid[0] <= x1 && centroid[1] >= y0 && centroid[1] <= y1;
-        });
-        setBrush2Selection(selectedRegions);
-      }
-    }
+    // Initial behavior setup
+    updateBehavior();
 
-    // Toggle visibility of the brushes when isBrush1Active changes
-    if (isBrush1Active) {
-      brush1Group.style("display", "inline");
-      brush2Group.style("display", "none");
-    } else {
-      brush1Group.style("display", "none");
-      brush2Group.style("display", "inline");
-    }
-  }, [isBrush1Active]); // Re-run effect when isBrush1Active changes
+    // Cleanup
+    return () => {
+      svg.on(".zoom", null);
+      brushContainer.selectAll("*").remove();
+    };
+  }, [isZoomMode, isBrush1Active]); // Dependencies trigger re-render
 
   return (
-    <div className="map-container relative border border-white p-2">
-      <svg id="map"></svg>
-      <MapTooltip tooltipContent={tooltipContent} position={tooltipPosition} />
-      <div className="mt-4 flex items-center">
+    <div className="map-container relative border border-gray-300 p-4">
+      <svg id="map" className="w-full h-auto"></svg>
+      {tooltipContent && (
+        <MapTooltip tooltipContent={tooltipContent} position={tooltipPosition} />
+      )}
+      <div className="mt-4 flex items-center gap-4">
         <Switch
-          checked={isBrush1Active}
-          onChange={setIsBrush1Active}
-          className={`${isBrush1Active ? 'bg-orange-400' : 'bg-blue-400'} 
+          checked={isZoomMode}
+          onChange={setIsZoomMode}
+          className={`${isZoomMode ? 'bg-green-400' : 'bg-blue-400'} 
                       relative inline-flex items-center h-6 rounded-full w-11`}
         >
-          <span className="sr-only">Switch between Brush 1 and Brush 2</span>
+          <span className="sr-only">Toggle between Zoom and Brush mode</span>
           <span
             className={`${
-              isBrush1Active ? 'translate-x-6' : 'translate-x-1'
+              isZoomMode ? 'translate-x-6' : 'translate-x-1'
             } inline-block w-4 h-4 transform bg-white rounded-full transition-transform`}
           />
         </Switch>
-        <span className="ml-2 text-gray-700">
-          {isBrush1Active ? "Brush 1 Active" : "Brush 2 Active"}
-        </span>
+        <span>{isZoomMode ? "View Mode" : "Insight Mode"}</span>
+        {!isZoomMode && (
+          <div className="ml-4">
+            <Switch
+              checked={isBrush1Active}
+              onChange={setIsBrush1Active}
+              className={`${isBrush1Active ? 'bg-orange-400' : 'bg-blue-400'} 
+                          relative inline-flex items-center h-6 rounded-full w-11`}
+            >
+              <span className="sr-only">Toggle between Brush 1 and Brush 2</span>
+              <span
+                className={`${
+                  isBrush1Active ? 'translate-x-6' : 'translate-x-1'
+                } inline-block w-4 h-4 transform bg-white rounded-full transition-transform`}
+              />
+            </Switch>
+            <span className="ml-2">{isBrush1Active ? "Brush 1 Active" : "Brush 2 Active"}</span>
+          </div>
+        )}
       </div>
     </div>
   );

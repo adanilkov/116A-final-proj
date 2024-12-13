@@ -2,38 +2,44 @@ import Image from "next/image";
 import Dropdown from "@/components/dropdown";
 import MapVis from "@/components/map";
 import BarVis from "@/components/barchart";
+import BarCharVis from "@/components/avgpricevis";
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[auto_1fr_auto] min-h-screen p-8 gap-8 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      {/* Header
-      <header className="row-start-1 flex justify-between items-center">
-        <Dropdown />
-      </header> */}
+    <div className="grid grid-rows-[auto_1fr_auto] min-h-screen p-4 sm:p-10 gap-6 font-luxury bg-black text-white">
+      {/* Header with Title */}
+      <header className="row-start-1 text-center">
+        <h1 className="text-4xl sm:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-700 via-gray-500 to-gray-300">[INSERT TITLE]</h1>
+        <p className="text-sm sm:text-md text-gray-400 mt-2 italic tracking-wide">
+          Created by Alex Danilkovas, Bryan Jiang, Jason Saez, Eric Xiao
+        </p>
+      </header>
 
       {/* Main Content */}
-      <main className="row-start-2 flex flex-row gap-8">
+      <main className="row-start-2 grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Left: Map Visualization */}
-        <div className="flex-1 h-full">
+        <div className="md:col-span-2 bg-gray-900 rounded-lg shadow-lg p-4">
+          <h2 className="text-2xl font-light mb-4 text-gray-300">Geographical Analysis</h2>
           <MapVis />
         </div>
 
         {/* Right: Visualization Placeholder */}
-        <div className="flex-1 h-full border border-white bg-black p-2">
-          <p>Right-side Visualization Placeholder</p>
+        <div className="bg-gray-900 rounded-lg shadow-lg p-4">
+          <h2 className="text-2xl font-light mb-4 text-gray-300">Additional Insights</h2>
         </div>
       </main>
 
       {/* Bottom Visualization */}
-      <section className="row-start-3 border border-white bg-black">
-        <p>Bottom-center Visualization Placeholder</p>
+      <section className="row-start-3 bg-gray-900 rounded-lg shadow-lg p-4">
+        <h2 className="text-2xl font-light mb-4 text-gray-300">Trends & Comparisons</h2>
+        <BarVis />
       </section>
 
       {/* Footer */}
-      <footer className="row-start-4 flex gap-6 flex-wrap items-center justify-center">
+      <footer className="row-start-4 text-center mt-8">
         <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+          className="flex items-center justify-center gap-2 text-gray-400 hover:text-gray-300 hover:underline text-md"
+          href="https://github.com/adanilkov/116A-final-proj"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -41,10 +47,10 @@ export default function Home() {
             aria-hidden
             src="/file.svg"
             alt="File icon"
-            width={16}
-            height={16}
+            width={20}
+            height={20}
           />
-          Github
+          View Project on Github
         </a>
       </footer>
     </div>
