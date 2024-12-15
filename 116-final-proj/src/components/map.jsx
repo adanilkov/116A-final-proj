@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import * as d3 from "d3";
-import geoData from './counties.json';
+import geoData from './counties_with_real_estate.json';
 import MapTooltip from "@/components/utils/map_tooltip";
 import { Switch } from '@headlessui/react';
 
@@ -41,7 +41,12 @@ export default function MapVis({ onBrush }) {
       .attr("stroke-width", 0.5)
       .on("mouseover", function (event, d) {
         d3.select(this).attr("fill", "#ffcc00");
-        setTooltipContent(d.properties.NAME);
+        setTooltipContent({
+          name: d.properties.NAME,
+          avg_price: d.properties.avg_price,
+          total_price: d.properties.total_price,
+          total_transactions: d.properties.total_transactions
+        });
         setTooltipPosition({ x: event.clientX, y: event.clientY });
       })
       .on("mousemove", function (event) {
