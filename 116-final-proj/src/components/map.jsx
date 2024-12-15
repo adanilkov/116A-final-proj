@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import * as d3 from "d3";
-import geoData from './counties.json'; // Importing the GeoJSON file
+import geoData from './counties.json';
 import MapTooltip from "@/components/utils/map_tooltip";
 import { Switch } from '@headlessui/react';
 
@@ -11,30 +11,27 @@ export default function MapVis({ onBrush }) {
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [isBrush1Active, setIsBrush1Active] = useState(true);
   const [isZoomMode, setIsZoomMode] = useState(true);
+  const [brush1Selection, setBrush1Selection] = useState(null);
+  const [brush2Selection, setBrush2Selection] = useState(null);
 
   useEffect(() => {
     const width = 800;
     const height = 600;
 
-    // Select the SVG 
     const svg = d3.select('#map')
       .attr('width', width)
       .attr('height', height)
       .style("background", "#000000");
 
-    // Ensure clean slate for containers
     svg.selectAll(".zoom-container").remove();
     svg.selectAll(".brush-container").remove();
 
-    // Create new containers
     const zoomContainer = svg.append("g").attr("class", "zoom-container");
     const brushContainer = svg.append("g").attr("class", "brush-container");
 
-    // Set up projection and path generator
     const projection = d3.geoAlbersUsa().fitSize([width, height], geoData);
     const pathGenerator = d3.geoPath().projection(projection);
 
-    // Draw map regions
     const mapPaths = zoomContainer.selectAll("path")
       .data(geoData.features)
       .join("path")
@@ -51,11 +48,102 @@ export default function MapVis({ onBrush }) {
         setTooltipPosition({ x: event.clientX, y: event.clientY });
       })
       .on("mouseout", function () {
-        d3.select(this).attr("fill", "#FFFFFF");
+        const d = d3.select(this).datum();
+        const fill = getRegionFill(d);
+        d3.select(this).attr("fill", fill);
         setTooltipContent(null);
       });
 
-    // Define zoom behavior
+    const getRegionFill = (region) => {
+      const isInBrush1 = brush1Selection && isRegionInSelection(region, brush1Selection);
+      const isInBrush2 = brush2Selection && isRegionInSelection(region, brush2Selection);
+      
+      if (isInBrush1 && isInBrush2) return "#800080"; // Purple for overlap
+      if (isInBrush1) return "#ff6347"; // Red for brush 1
+      if (isInBrush2) return "#4682b4"; // Blue for brush 2
+      return "#FFFFFF"; // Default white
+    };
+
+    const isRegionInSelection = (region, selection) => {
+      const centroid = projection(d3.geoCentroid(region));
+      const [[x0, y0], [x1, y1]] = selection;
+      return centroid &&
+             centroid[0] >= x0 &&
+             centroid[0] <= x1 &&
+             centroid[1] >= y0 &&
+             centroid[1] <= y1;
+    };
+
+    const updateMapColors = () => {
+      mapPaths.attr("fill", d => getRegionFill(d));
+    };
+
+    const handleBrush = (event, brushNumber) => {
+      const selection = event.selection;
+      if (selection) {
+        // Update colors in real-time during brushing
+        mapPaths.attr("fill", (d) => {
+          const centroid = projection(d3.geoCentroid(d));
+          if (!centroid) return "#FFFFFF";
+          
+          const [[x0, y0], [x1, y1]] = selection;
+          const isInCurrentBrush = centroid[0] >= x0 && 
+                                 centroid[0] <= x1 && 
+                                 centroid[1] >= y0 && 
+                                 centroid[1] <= y1;
+          
+          // For brush1 (active)
+          if (brushNumber === 1) {
+            const isInBrush2 = brush2Selection && isRegionInSelection(d, brush2Selection);
+            if (isInCurrentBrush && isInBrush2) return "#800080"; // Purple for overlap
+            if (isInCurrentBrush) return "#ff6347"; // Red for brush1
+            if (isInBrush2) return "#4682b4"; // Keep brush2 selections
+            return "#FFFFFF";
+          }
+          // For brush2 (active)
+          else {
+            const isInBrush1 = brush1Selection && isRegionInSelection(d, brush1Selection);
+            if (isInCurrentBrush && isInBrush1) return "#800080"; // Purple for overlap
+            if (isInCurrentBrush) return "#4682b4"; // Blue for brush2
+            if (isInBrush1) return "#ff6347"; // Keep brush1 selections
+            return "#FFFFFF";
+          }
+        });
+      } else {
+        // If no selection (e.g., during brush start), restore previous state
+        updateMapColors();
+      }
+    };
+
+    const handleBrushEnd = (event, brushNumber) => {
+      const selection = event.selection;
+      if (selection) {
+        const selectedRegions = geoData.features.filter(d => 
+          isRegionInSelection(d, selection)
+        );
+
+        if (brushNumber === 1) {
+          setBrush1Selection(selection);
+        } else {
+          setBrush2Selection(selection);
+        }
+
+        if (typeof onBrush === "function") {
+          onBrush(selectedRegions, brushNumber);
+        }
+      } else {
+        if (brushNumber === 1) {
+          setBrush1Selection(null);
+        } else {
+          setBrush2Selection(null);
+        }
+        if (typeof onBrush === "function") {
+          onBrush([], brushNumber);
+        }
+      }
+      updateMapColors();
+    };
+
     const zoom = d3.zoom()
       .scaleExtent([1, 8])
       .translateExtent([[0, 0], [width, height]])
@@ -63,68 +151,16 @@ export default function MapVis({ onBrush }) {
         zoomContainer.attr("transform", event.transform);
       });
 
-    // Define brush behavior for brush 1
     const brush1 = d3.brush()
       .extent([[0, 0], [width, height]])
-      .on("start brush", (event) => {
-        const selection = event.selection;
-        if (selection) {
-          const [[x0, y0], [x1, y1]] = selection;
+      .on("brush", (event) => handleBrush(event, 1))
+      .on("end", (event) => handleBrushEnd(event, 1));
 
-          const selectedRegions = geoData.features.filter((d) => {
-            const centroid = projection(d3.geoCentroid(d));
-            return centroid && 
-                   centroid[0] >= x0 && 
-                   centroid[0] <= x1 && 
-                   centroid[1] >= y0 && 
-                   centroid[1] <= y1;
-          });
-
-          // Highlight selected regions
-          mapPaths.attr("fill", (d) => selectedRegions.includes(d) ? "#ff6347" : "#FFFFFF");
-        }
-      })
-      .on("end", (event) => {
-        const selection = event.selection;
-        if (selection) {
-          const [[x0, y0], [x1, y1]] = selection;
-      
-          const selectedRegions = geoData.features.filter((d) => {
-            const centroid = projection(d3.geoCentroid(d));
-            return (
-              centroid &&
-              centroid[0] >= x0 &&
-              centroid[0] <= x1 &&
-              centroid[1] >= y0 &&
-              centroid[1] <= y1
-            );
-          });
-      
-          console.log("Selected Regions:", selectedRegions); // Debugging
-          if (typeof onBrush === "function") {
-            onBrush(selectedRegions); // Pass selected regions to parent
-          }
-        } else {
-          console.log("Brush cleared"); // Debugging
-          if (typeof onBrush === "function") {
-            onBrush([]); // Clear selection
-          }
-        }
-      });
-      
-
-    // Define brush behavior for brush 2 (currently no linked visualization)
     const brush2 = d3.brush()
       .extent([[0, 0], [width, height]])
-      .on("start brush", (event) => {
-        const selection = event.selection;
-        if (selection) {
-          const [[x0, y0], [x1, y1]] = selection;
-          // Brush 2 logic (visualization will be added later)
-        }
-      });
+      .on("brush", (event) => handleBrush(event, 2))
+      .on("end", (event) => handleBrushEnd(event, 2));
 
-    // Update behavior function
     const updateBehavior = () => {
       svg.on(".zoom", null);
       brushContainer.selectAll("*").remove();
@@ -133,18 +169,25 @@ export default function MapVis({ onBrush }) {
         svg.call(zoom);
       } else {
         brushContainer.call(isBrush1Active ? brush1 : brush2);
+        // Restore previous brush selection if it exists
+        if (isBrush1Active && brush1Selection) {
+          brushContainer.select(".brush")
+            .call(brush1.move, brush1Selection);
+        } else if (!isBrush1Active && brush2Selection) {
+          brushContainer.select(".brush")
+            .call(brush2.move, brush2Selection);
+        }
       }
+      updateMapColors();
     };
 
-    // Initial behavior setup
     updateBehavior();
 
-    // Cleanup
     return () => {
       svg.on(".zoom", null);
       brushContainer.selectAll("*").remove();
     };
-  }, [isZoomMode, isBrush1Active]); // Dependencies trigger re-render
+  }, [isZoomMode, isBrush1Active, brush1Selection, brush2Selection]);
 
   return (
     <div className="map-container relative border border-gray-300 p-4">
