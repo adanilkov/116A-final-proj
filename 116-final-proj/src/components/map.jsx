@@ -21,7 +21,7 @@ export default function MapVis({ onBrush }) {
     const svg = d3.select('#map')
       .attr('width', width)
       .attr('height', height)
-      .style("background", "#000000");
+      .style("background", "bg-base-200");
 
     svg.selectAll(".zoom-container").remove();
     svg.selectAll(".brush-container").remove();
@@ -195,7 +195,7 @@ export default function MapVis({ onBrush }) {
   }, [isZoomMode, isBrush1Active, brush1Selection, brush2Selection]);
 
   return (
-    <div className="map-container relative border border-gray-300 p-4">
+    <div className="map-container relative border border-gray-300 p-4 bg-base-200 rounded-xl">
       <svg id="map" className="w-full h-auto"></svg>
       {tooltipContent && (
         <MapTooltip tooltipContent={tooltipContent} position={tooltipPosition} />
