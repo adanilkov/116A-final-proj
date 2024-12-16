@@ -6,7 +6,7 @@ import geoData from './counties_with_real_estate.json';
 import MapTooltip from "@/components/utils/map_tooltip";
 import { Switch } from '@headlessui/react';
 
-export default function MapVis({ onBrush }) {
+export default function MapVis({ onBrush, height = 525 }) {
   const [tooltipContent, setTooltipContent] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [isBrush1Active, setIsBrush1Active] = useState(true);
@@ -16,21 +16,27 @@ export default function MapVis({ onBrush }) {
 
   useEffect(() => {
     const width = 800;
-    const height = 600;
 
     const svg = d3.select('#map')
-      .attr('width', width)
+      .attr('width', '100%')
       .attr('height', height)
-      .style("background", "bg-base-200");
+      .style("background", "bg-base-200")
+      .style("border-radius", "8px");
 
     svg.selectAll(".zoom-container").remove();
     svg.selectAll(".brush-container").remove();
+    svg.selectAll(".zoom-container")
+      .attr('transform', `translate(${width / 2}, ${height / 2})`);
 
     const zoomContainer = svg.append("g").attr("class", "zoom-container");
     const brushContainer = svg.append("g").attr("class", "brush-container");
 
-    const projection = d3.geoAlbersUsa().fitSize([width, height], geoData);
+    const h = parseInt(svg.style('height'));
+    const projection = d3.geoAlbersUsa().fitSize([width, h], geoData);
     const pathGenerator = d3.geoPath().projection(projection);
+
+    // Centering the map
+    // const translate = [width / 2.2, height / 2.2];
 
     const mapPaths = zoomContainer.selectAll("path")
       .data(geoData.features)
@@ -39,6 +45,7 @@ export default function MapVis({ onBrush }) {
       .attr("fill", "#FFFFFF")
       .attr("stroke", "#555")
       .attr("stroke-width", 0.5)
+      // .attr("transform", `translate(${translate})`)
       .on("mouseover", function (event, d) {
         d3.select(this).attr("fill", "#ffcc00");
         setTooltipContent({
@@ -86,7 +93,6 @@ export default function MapVis({ onBrush }) {
     const handleBrush = (event, brushNumber) => {
       const selection = event.selection;
       if (selection) {
-        // Update colors in real-time during brushing
         mapPaths.attr("fill", (d) => {
           const centroid = projection(d3.geoCentroid(d));
           if (!centroid) return "#FFFFFF";
@@ -115,7 +121,6 @@ export default function MapVis({ onBrush }) {
           }
         });
       } else {
-        // If no selection (e.g., during brush start), restore previous state
         updateMapColors();
       }
     };
@@ -174,7 +179,6 @@ export default function MapVis({ onBrush }) {
         svg.call(zoom);
       } else {
         brushContainer.call(isBrush1Active ? brush1 : brush2);
-        // Restore previous brush selection if it exists
         if (isBrush1Active && brush1Selection) {
           brushContainer.select(".brush")
             .call(brush1.move, brush1Selection);

@@ -14,7 +14,7 @@ const SegmentedBarChart = ({ data = [] }) => {
     if (!data || data.length === 0) {
       // Show empty state
       const svg = d3.select(svgRef.current)
-        .attr('width', 1200)
+        .attr('width', '100%')
         .attr('height', 100);
       
       svg.append('text')
