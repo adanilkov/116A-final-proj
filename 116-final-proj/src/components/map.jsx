@@ -13,6 +13,9 @@ export default function MapVis({ onBrush, height = 525 }) {
   const [isZoomMode, setIsZoomMode] = useState(true);
   const [brush1Selection, setBrush1Selection] = useState(null);
   const [brush2Selection, setBrush2Selection] = useState(null);
+  const [brush1States, setBrush1States] = useState(new Set());
+  const [brush2States, setBrush2States] = useState(new Set());
+  const [isStateMode, setIsStateMode] = useState(false);
 
   useEffect(() => {
     const width = 800;
@@ -66,15 +69,25 @@ export default function MapVis({ onBrush, height = 525 }) {
         setTooltipContent(null);
       });
 
-    const getRegionFill = (region) => {
-      const isInBrush1 = brush1Selection && isRegionInSelection(region, brush1Selection);
-      const isInBrush2 = brush2Selection && isRegionInSelection(region, brush2Selection);
-      
-      if (isInBrush1 && isInBrush2) return "#800080"; // Purple for overlap
-      if (isInBrush1) return "#ff6347"; // Red for brush 1
-      if (isInBrush2) return "#4682b4"; // Blue for brush 2
-      return "#FFFFFF"; // Default white
-    };
+      const getRegionFill = (region) => {
+        if (isStateMode) {
+          const isInBrush1States = brush1States.has(region.properties.STATEFP);
+          const isInBrush2States = brush2States.has(region.properties.STATEFP);
+          
+          if (isInBrush1States && isInBrush2States) return "#800080"; // Purple for overlap
+          if (isInBrush1States) return "#ff6347"; // Red for brush 1
+          if (isInBrush2States) return "#4682b4"; // Blue for brush 2
+          return "#FFFFFF"; // Default white
+        } else {
+          const isInBrush1 = brush1Selection && isRegionInSelection(region, brush1Selection);
+          const isInBrush2 = brush2Selection && isRegionInSelection(region, brush2Selection);
+          
+          if (isInBrush1 && isInBrush2) return "#800080"; // Purple for overlap
+          if (isInBrush1) return "#ff6347"; // Red for brush 1
+          if (isInBrush2) return "#4682b4"; // Blue for brush 2
+          return "#FFFFFF"; // Default white
+        }
+      };
 
     const isRegionInSelection = (region, selection) => {
       const centroid = projection(d3.geoCentroid(region));
@@ -90,67 +103,124 @@ export default function MapVis({ onBrush, height = 525 }) {
       mapPaths.attr("fill", d => getRegionFill(d));
     };
 
+    // Update the brush handlers
     const handleBrush = (event, brushNumber) => {
       const selection = event.selection;
-      if (selection) {
-        mapPaths.attr("fill", (d) => {
+      if (!selection) {
+        updateMapColors();
+        return;
+      }
+    
+      const [[x0, y0], [x1, y1]] = selection;
+    
+      if (isStateMode) {
+        // Find all states in the current brush
+        const targetStateFps = new Set();
+        geoData.features.forEach(feature => {
+          const centroid = projection(d3.geoCentroid(feature));
+          if (centroid &&
+              centroid[0] >= x0 &&
+              centroid[0] <= x1 &&
+              centroid[1] >= y0 &&
+              centroid[1] <= y1) {
+            targetStateFps.add(feature.properties.STATEFP);
+          }
+        });
+    
+        // Get the current stored states
+        const currentStates = brushNumber === 1 ? brush1States : brush2States;
+        targetStateFps.forEach(state => currentStates.add(state));
+    
+        // Update all region colors
+        mapPaths.attr("fill", d => getRegionFill(d));
+      } else {
+        // Original county-based brushing logic
+        mapPaths.attr("fill", d => {
           const centroid = projection(d3.geoCentroid(d));
           if (!centroid) return "#FFFFFF";
           
-          const [[x0, y0], [x1, y1]] = selection;
           const isInCurrentBrush = centroid[0] >= x0 && 
-                                 centroid[0] <= x1 && 
-                                 centroid[1] >= y0 && 
-                                 centroid[1] <= y1;
+                                  centroid[0] <= x1 && 
+                                  centroid[1] >= y0 && 
+                                  centroid[1] <= y1;
           
-          // For brush1 (active)
           if (brushNumber === 1) {
             const isInBrush2 = brush2Selection && isRegionInSelection(d, brush2Selection);
-            if (isInCurrentBrush && isInBrush2) return "#800080"; // Purple for overlap
-            if (isInCurrentBrush) return "#ff6347"; // Red for brush1
-            if (isInBrush2) return "#4682b4"; // Keep brush2 selections
-            return "#FFFFFF";
-          }
-          // For brush2 (active)
-          else {
+            if (isInCurrentBrush && isInBrush2) return "#800080";
+            if (isInCurrentBrush) return "#ff6347";
+            if (isInBrush2) return "#4682b4";
+          } else {
             const isInBrush1 = brush1Selection && isRegionInSelection(d, brush1Selection);
-            if (isInCurrentBrush && isInBrush1) return "#800080"; // Purple for overlap
-            if (isInCurrentBrush) return "#4682b4"; // Blue for brush2
-            if (isInBrush1) return "#ff6347"; // Keep brush1 selections
-            return "#FFFFFF";
+            if (isInCurrentBrush && isInBrush1) return "#800080";
+            if (isInCurrentBrush) return "#4682b4";
+            if (isInBrush1) return "#ff6347";
           }
+          return "#FFFFFF";
         });
-      } else {
-        updateMapColors();
       }
     };
-
+    
+    // Update handleBrushEnd function
     const handleBrushEnd = (event, brushNumber) => {
       const selection = event.selection;
-      if (selection) {
-        const selectedRegions = geoData.features.filter(d => 
-          isRegionInSelection(d, selection)
-        );
-
-        if (brushNumber === 1) {
-          setBrush1Selection(selection);
-        } else {
-          setBrush2Selection(selection);
-        }
-
-        if (typeof onBrush === "function") {
-          onBrush(selectedRegions, brushNumber);
-        }
-      } else {
+      if (!selection) {
         if (brushNumber === 1) {
           setBrush1Selection(null);
+          setBrush1States(new Set());
         } else {
           setBrush2Selection(null);
+          setBrush2States(new Set());
         }
         if (typeof onBrush === "function") {
           onBrush([], brushNumber);
         }
+        updateMapColors();
+        return;
       }
+    
+      const [[x0, y0], [x1, y1]] = selection;
+      let selectedRegions;
+    
+      if (isStateMode) {
+        // Get all states in the brush selection
+        const newStates = new Set();
+        geoData.features.forEach(feature => {
+          const centroid = projection(d3.geoCentroid(feature));
+          if (centroid &&
+              centroid[0] >= x0 &&
+              centroid[0] <= x1 &&
+              centroid[1] >= y0 &&
+              centroid[1] <= y1) {
+            newStates.add(feature.properties.STATEFP);
+          }
+        });
+    
+        // Update the appropriate brush's state set
+        if (brushNumber === 1) {
+          setBrush1States(new Set([...brush1States, ...newStates]));
+        } else {
+          setBrush2States(new Set([...brush2States, ...newStates]));
+        }
+    
+        // Select all counties in all selected states
+        const stateSet = brushNumber === 1 ? brush1States : brush2States;
+        newStates.forEach(state => stateSet.add(state));
+        selectedRegions = geoData.features.filter(d => stateSet.has(d.properties.STATEFP));
+      } else {
+        // Normal county-based selection
+        selectedRegions = geoData.features.filter(d => isRegionInSelection(d, selection));
+      }
+    
+      if (brushNumber === 1) {
+        setBrush1Selection(selection);
+      } else {
+        setBrush2Selection(selection);
+      }
+    
+      if (typeof onBrush === "function") {
+        onBrush(selectedRegions, brushNumber);
+      }
+    
       updateMapColors();
     };
 
@@ -196,8 +266,8 @@ export default function MapVis({ onBrush, height = 525 }) {
       svg.on(".zoom", null);
       brushContainer.selectAll("*").remove();
     };
-  }, [isZoomMode, isBrush1Active, brush1Selection, brush2Selection]);
-
+  }, [isZoomMode, isBrush1Active, brush1Selection, brush2Selection, brush1States, brush2States, isStateMode]);
+  
   return (
     <div className="map-container relative border border-gray-300 p-4 bg-base-200 rounded-xl">
       <svg id="map" className="w-full h-auto"></svg>
@@ -220,22 +290,40 @@ export default function MapVis({ onBrush, height = 525 }) {
         </Switch>
         <span>{isZoomMode ? "View Mode" : "Insight Mode"}</span>
         {!isZoomMode && (
-          <div className="ml-4">
-            <Switch
-              checked={isBrush1Active}
-              onChange={setIsBrush1Active}
-              className={`${isBrush1Active ? 'bg-orange-400' : 'bg-blue-400'} 
-                          relative inline-flex items-center h-6 rounded-full w-11`}
-            >
-              <span className="sr-only">Toggle between Brush 1 and Brush 2</span>
-              <span
-                className={`${
-                  isBrush1Active ? 'translate-x-6' : 'translate-x-1'
-                } inline-block w-4 h-4 transform bg-white rounded-full transition-transform`}
-              />
-            </Switch>
-            <span className="ml-2">{isBrush1Active ? "Brush 1 Active" : "Brush 2 Active"}</span>
-          </div>
+          <>
+            <div className="ml-4">
+              <Switch
+                checked={isBrush1Active}
+                onChange={setIsBrush1Active}
+                className={`${isBrush1Active ? 'bg-orange-400' : 'bg-blue-400'} 
+                           relative inline-flex items-center h-6 rounded-full w-11`}
+              >
+                <span className="sr-only">Toggle between Brush 1 and Brush 2</span>
+                <span
+                  className={`${
+                    isBrush1Active ? 'translate-x-6' : 'translate-x-1'
+                  } inline-block w-4 h-4 transform bg-white rounded-full transition-transform`}
+                />
+              </Switch>
+              <span className="ml-2">{isBrush1Active ? "Brush 1 Active" : "Brush 2 Active"}</span>
+            </div>
+            <div className="ml-4">
+              <Switch
+                checked={isStateMode}
+                onChange={setIsStateMode}
+                className={`${isStateMode ? 'bg-purple-400' : 'bg-gray-400'} 
+                           relative inline-flex items-center h-6 rounded-full w-11`}
+              >
+                <span className="sr-only">Toggle between County and State selection</span>
+                <span
+                  className={`${
+                    isStateMode ? 'translate-x-6' : 'translate-x-1'
+                  } inline-block w-4 h-4 transform bg-white rounded-full transition-transform`}
+                />
+              </Switch>
+              <span className="ml-2">{isStateMode ? "State Selection" : "County Selection"}</span>
+            </div>
+          </>
         )}
       </div>
     </div>
