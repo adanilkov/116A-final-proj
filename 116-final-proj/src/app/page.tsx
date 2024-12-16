@@ -1,8 +1,7 @@
 import Image from "next/image";
 import Dropdown from "@/components/dropdown";
-import MapVis from "@/components/map";
-import BarVis from "@/components/barchart";
-import BarCharVis from "@/components/avgpricevis";
+import LinkedVis from "@/components/LinkedVisualization";
+// import CountyTable from "@/components/tablevis";
 
 export default function Home() {
   return (
@@ -20,20 +19,26 @@ export default function Home() {
         {/* Left: Map Visualization */}
         <div className="md:col-span-2 bg-white rounded-lg shadow-xl p-4">
           <h2 className="text-2xl font-light mb-4 text-neutral">Geographical Analysis</h2>
-          <MapVis />
+          <div id="map-container" className="w-full h-full"></div>
         </div>
 
         {/* Right: Visualization Placeholder */}
         <div className="bg-white rounded-lg shadow-xl p-4">
-          <h2 className="text-2xl font-light mb-4 text-neutral">Additional Insights</h2>
+          <h2 className="text-2xl font-light mb-4 text-neutral">Selected Counties</h2>
+          <div id="table-container">
+            {/* <CountyTable /> */}
+          </div>
         </div>
       </main>
 
       {/* Bottom Visualization */}
       <section className="row-start-3 bg-white rounded-lg shadow-xl p-4">
         <h2 className="text-2xl font-light mb-4 text-neutral">Trends & Comparisons</h2>
-        <BarVis />
+        <div id="barchart-container" className="w-full h-full"></div>
       </section>
+
+      {/* LinkedVisualization Component */}
+      <LinkedVis />
 
       {/* Footer */}
       <footer className="row-start-4 text-center mt-8">

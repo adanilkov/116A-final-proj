@@ -1,128 +1,166 @@
 'use client';
-
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 
-const SegmentedBarChart = () => {
+const SegmentedBarChart = ({ data = [] }) => {
   const svgRef = useRef();
-  
+
   useEffect(() => {
-    // // Clear any existing SVG content
+    console.log("BarChart received data:", data);
+    
+    // Clear any existing SVG content
     d3.select(svgRef.current).selectAll("*").remove();
-    
-    // Data
-    const data = [
-      { category: "buyers", value: 60, color: "#ff0000" },
-      { category: "no data", value: 10, color: "#cccccc" },
-      { category: "renters", value: 30, color: "#0000ff" }
+
+    if (!data || data.length === 0) {
+      // Show empty state
+      const svg = d3.select(svgRef.current)
+        .attr('width', 1200)
+        .attr('height', 100);
+      
+      svg.append('text')
+        .attr('x', 600)
+        .attr('y', 50)
+        .attr('text-anchor', 'middle')
+        .text('Select regions on the map to see statistics');
+      return;
+    }
+
+    // Process data for each metric
+    const metrics = [
+      { key: 'avg_price', label: 'Average Price', format: '$.2s' },
+      { key: 'total_transactions', label: 'Average Total Transactions', format: ',.0f' },
+      { key: 'total_price', label: 'Average Total Price', format: '$.2s' }
     ];
-    
+
+    const processedData = metrics.map(metric => {
+      const aggregated = d3.rollup(data,
+        v => ({
+          value: d3.mean(v, d => d[metric.key]),
+          count: v.length
+        }),
+        d => d.brushNumber
+      );
+
+      return {
+        metric: metric.key,
+        label: metric.label,
+        format: metric.format,
+        data: Array.from(aggregated, ([brushNumber, values]) => ({
+          brushNumber,
+          value: values.value,
+          count: values.count,
+          label: `Selection ${brushNumber} (${values.count})`
+        }))
+      };
+    });
+
     // Dimensions
-    const width = 600;
-    const barHeight = 30; // Height of the bar
-    const gap = 10; // Gap between bar and axis
-    const height = barHeight + gap; // Total height including gap
-    const margin = { top: 30, right: 20, bottom: 40, left: 40 };
-    
+    const width = 1200; // Increased overall width
+    const height = 400;
+    const margin = { top: 50, right: 40, bottom: 60, left: 60 };
+    const spacing = 120; // Increased spacing between charts
+    const chartWidth = (width - margin.left - margin.right - spacing * 2) / 3;
+    const innerHeight = height - margin.top - margin.bottom;
+
     // Create SVG
     const svg = d3.select(svgRef.current)
-      .attr('width', width + margin.left + margin.right)
-      .attr('height', height + margin.top + margin.bottom)
-      .append('g')
-      .attr('transform', `translate(${margin.left},${margin.top})`);
-    
-    // Create scale
-    const xScale = d3.scaleLinear()
-      .domain([-100, 100])
-      .range([0, width]);
-    
-    // Create axis
-    const xAxis = d3.axisBottom(xScale)
-      .tickFormat(d => Math.abs(d));
-    
-    // Add axis
-    svg.append('g')
-      .attr('transform', `translate(0,${height})`)
-      .call(xAxis);
-    
-    // Calculate cumulative positions
-    let cumulative = -data[0].value;
-    const segments = data.map(d => {
-      const segment = {
-        ...d,
-        start: cumulative,
-        end: cumulative + d.value
-      };
-      cumulative += d.value;
-      return segment;
-    });
+      .attr('width', width)
+      .attr('height', height);
 
-    svg.append('text')
-      .attr('x', xScale(segments[0].end))
-      .attr('y', -15)
-      .attr('text-anchor', 'middle')
-      .attr('font-size', '10px')
-      .attr('fill', 'black')
-      .text('Highest Buyer Percentage');
+    // Create each chart
+    processedData.forEach((metricData, index) => {
+      const xOffset = margin.left + (chartWidth + spacing) * index;
+      
+      const g = svg.append('g')
+        .attr('transform', `translate(${xOffset},${margin.top})`);
 
-    
-    // Create segments
-    const bars = svg.selectAll('.segment')
-      .data(segments)
-      .enter()
-      .append('rect')
-      .attr('class', 'segment')
-      .attr('x', d => xScale(d.start))
-      .attr('y', 0) // Start at top
-      .attr('width', d => Math.abs(xScale(d.value) - xScale(0)))
-      .attr('height', barHeight) // Use barHeight instead of total height
-      .attr('fill', d => d.color)
-      .style('cursor', 'pointer');
-    
-    // Add interactivity
-    bars.on('mouseover', function(event, d) {
-      d3.select(this)
-        .attr('opacity', 0.7);
-        
-      // Add tooltip
-      svg.append('text')
-        .attr('class', 'tooltip')
-        .attr('x', xScale(d.start + d.value/2))
-        .attr('y', -5)
+      // Add background rectangle for visual separation
+      g.append('rect')
+        .attr('x', -20)
+        .attr('y', -30)
+        .attr('width', chartWidth + 40)
+        .attr('height', innerHeight + 80)
+        .attr('fill', '#f8f9fa')
+        .attr('rx', 10); // Rounded corners
+
+      // Scales
+      const yScale = d3.scaleLinear()
+        .domain([0, d3.max(metricData.data, d => d.value)])
+        .range([innerHeight, 0]);
+
+      const xScale = d3.scaleBand()
+        .domain(metricData.data.map(d => d.label))
+        .range([0, chartWidth])
+        .padding(0.4); // Increased padding between bars
+
+      // Axes
+      const yAxis = d3.axisLeft(yScale)
+        .tickFormat(d => d3.format(metricData.format)(d))
+        .ticks(5);
+      
+      const xAxis = d3.axisBottom(xScale);
+
+      // Add axes
+      g.append('g')
+        .call(yAxis)
+        .selectAll('text')
+        .style('font-size', '12px')
+        .style('text-anchor', 'end');
+
+      g.append('g')
+        .attr('transform', `translate(0,${innerHeight})`)
+        .call(xAxis)
+        .selectAll('text')
+        .attr('transform', 'rotate(-45)')
+        .style('font-size', '12px')
+        .style('text-anchor', 'end');
+
+      // Add bars
+      const bars = g.selectAll('.bar')
+        .data(metricData.data)
+        .enter()
+        .append('rect')
+        .attr('class', 'bar')
+        .attr('x', d => xScale(d.label))
+        .attr('width', xScale.bandwidth())
+        .attr('y', innerHeight)
+        .attr('fill', d => d.brushNumber === 1 ? '#ff6347' : '#4682b4')
+        .attr('rx', 4); // Rounded corners on bars
+
+      // Add value labels
+      g.selectAll('.value-label')
+        .data(metricData.data)
+        .enter()
+        .append('text')
+        .attr('class', 'value-label')
+        .attr('x', d => xScale(d.label) + xScale.bandwidth() / 2)
+        .attr('y', d => yScale(d.value) - 8)
         .attr('text-anchor', 'middle')
-        .text(`${d.category}: ${Math.abs(d.value)}%`);
-    })
-    .on('mouseout', function() {
-      d3.select(this)
-        .attr('opacity', 1);
-      svg.selectAll('.tooltip').remove();
+        .style('fill', 'black')
+        .style('font-size', '12px')
+        .text(d => d3.format(metricData.format)(d.value));
+
+      // Animate bars
+      bars.transition()
+        .duration(500)
+        .attr('y', d => yScale(d.value))
+        .attr('height', d => innerHeight - yScale(d.value));
+
+      // Add title for each chart
+      g.append('text')
+        .attr('x', chartWidth / 2)
+        .attr('y', -20)
+        .attr('text-anchor', 'middle')
+        .style('font-size', '16px')
+        .style('font-weight', 'bold')
+        .text(metricData.label);
     });
 
-    bars.transition()
-      .duration(500)
-      .attr('width', d => Math.abs(xScale(d.value) - xScale(0)));
-    
-    // Add year label
-    svg.append('text')
-      .attr('x', width/2)
-      .attr('y', -10)
-      .attr('text-anchor', 'middle')
-      .attr('font-size', '24px')
-      .text('1985');
-      
-    // Add label
-    svg.append('text')
-      .attr('x', width/2)
-      .attr('y', height + 35)
-      .attr('text-anchor', 'middle')
-      .attr('font-size', '12px')
-      .text('Percentage of renters vs. buyers in selected region.');
-      
-  }, []);
+  }, [data]); // Re-render when data changes
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <svg ref={svgRef} className="w-full"></svg>
+    <div className="w-full h-full">
+      <svg ref={svgRef} className="w-full h-full" preserveAspectRatio="xMidYMid meet"></svg>
     </div>
   );
 };
