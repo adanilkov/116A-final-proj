@@ -35,22 +35,21 @@ export default function Home() {
 
         {/* Left: Map Visualization */}
         <div className="flex items-stretch justify-center space-x-4 h-[80vh]">
-          <div
-            className={`flex-grow transition-all duration-500 ease-in-out bg-white rounded-lg shadow-xl p-4 h-[80vh] ${previewToggled ? "w-[70%]" : "w-full"}`}
-          >
-            
-            <div className="text-2xl flex font-sans font-light mb-4 text-neutral justify-between flex">
-              Geographical Analysis
-              <div id="map-container" className="w-full h-full"></div> 
-              {/* moving ^^^^^ that line adjusts the position on the page */}
-              <button
-                className="btn items-center justify-end bg-white min-h-2 rounded-lg h-8 w-20 focus:outline-none"
-                onClick={togglePreview}
-              >
-                <span className="font-light text-sm justify-center -translate-x-1">Filters</span>
-              </button>
-            </div>
+        <div
+          className={`flex-grow transition-all duration-500 ease-in-out bg-white rounded-lg shadow-xl p-4 h-[80vh] ${previewToggled ? "w-[70%]" : "w-full"}`}
+        >
+          <div className="text-2xl flex font-sans font-light mb-4 text-neutral w-full justify-between items-center">
+            Geographical Analysis
+            <button
+              className="btn items-center justify-end bg-white min-h-2 rounded-lg h-8 w-20 focus:outline-none"
+              onClick={togglePreview}
+            >
+              <span className="font-light text-sm -translate-x-1">Filters</span>
+            </button>
           </div>
+          <div id="map-container" className="w-full h-full"></div>
+        </div>
+
 
 
 
