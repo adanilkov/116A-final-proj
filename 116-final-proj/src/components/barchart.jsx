@@ -28,8 +28,8 @@ const SegmentedBarChart = ({ data = [] }) => {
     // Process data for each metric
     const metrics = [
       { key: 'avg_price', label: 'Average Price', format: '$.2s' },
-      { key: 'total_transactions', label: 'Average Total Transactions', format: ',.0f' },
-      { key: 'total_price', label: 'Average Total Price', format: '$.2s' }
+      { key: 'total_transactions', label: 'Total Transactions', format: ',.0f' },
+      { key: 'total_price', label: 'Total Price', format: '$.2s' }
     ];
 
     const processedData = metrics.map(metric => {
