@@ -82,8 +82,6 @@ export default function MapVis({ onBrush, filteredCounties, previewToggled }) {
         } else {
           const isInBrush1 = brush1Selection && isRegionInSelection(region, brush1Selection);
           const isInBrush2 = brush2Selection && isRegionInSelection(region, brush2Selection);
-
-          // console.log(typeof(filteredCounties))
           const inFilter = filteredCounties.includes(region)
           if (inFilter && previewToggled) return "#32a889"
           

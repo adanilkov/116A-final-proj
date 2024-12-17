@@ -5,9 +5,7 @@ import * as d3 from 'd3';
 const SegmentedBarChart = ({ data = [] }) => {
   const svgRef = useRef();
 
-  useEffect(() => {
-    console.log("BarChart received data:", data);
-    
+  useEffect(() => {  
     // Clear any existing SVG content
     d3.select(svgRef.current).selectAll("*").remove();
 

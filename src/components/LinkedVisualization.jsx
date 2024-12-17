@@ -11,7 +11,6 @@ const LinkedVisualization = ({filteredCounties, previewToggled}) => {
   const [chartRoot, setChartRoot] = useState(null);
 
   const handleMapBrush = useCallback((selectedRegions, brushNumber) => {
-    console.log("Map selection received:", selectedRegions, brushNumber);
     
     const processedRegions = selectedRegions.map(feature => ({
       name: feature.properties.NAME,
