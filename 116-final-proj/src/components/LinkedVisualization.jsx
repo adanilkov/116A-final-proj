@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import SegmentedBarChart from './barchart';
 import MapVis from './map';
 
-const LinkedVisualization = ({filteredCounties}) => {
+const LinkedVisualization = ({filteredCounties, previewToggled}) => {
   const [brush1Regions, setBrush1Regions] = useState([]);
   const [brush2Regions, setBrush2Regions] = useState([]);
   const [mapRoot, setMapRoot] = useState(null);
@@ -57,9 +57,9 @@ const LinkedVisualization = ({filteredCounties}) => {
       mapContainer.appendChild(mapDiv);
       const newMapRoot = createRoot(mapDiv);
       setMapRoot(newMapRoot);
-      newMapRoot.render(<MapVis onBrush={handleMapBrush} filteredCounties={filteredCounties} />);
+      newMapRoot.render(<MapVis onBrush={handleMapBrush} filteredCounties={filteredCounties} previewToggled={previewToggled} />);
     } else if (mapRoot) {
-      mapRoot.render(<MapVis onBrush={handleMapBrush} filteredCounties={filteredCounties} />);
+      mapRoot.render(<MapVis onBrush={handleMapBrush} filteredCounties={filteredCounties} previewToggled={previewToggled} />);
     }
 
     // Render barchart into barchart-container

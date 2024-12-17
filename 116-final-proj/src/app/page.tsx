@@ -84,7 +84,7 @@ export default function Home() {
       </section>
 
       {/* LinkedVisualization Component */}
-      <LinkedVis filteredCounties={filteredCounties} />
+      <LinkedVis filteredCounties={filteredCounties} previewToggled={previewToggled} />
 
       {/* Footer */}
       <footer className="row-start-4 text-center mt-8">
