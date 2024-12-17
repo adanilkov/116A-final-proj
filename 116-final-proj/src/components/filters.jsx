@@ -1,9 +1,8 @@
+import { useState, useEffect } from "react";
 import TwoHandleSlider from "./utils/slider";
-import { useState } from "react";
 import geoData from './counties_with_real_estate.json';
 
-const Filters = () => {
-  // Compute initial min and max ranges for each property
+const Filters = ({ onFilterChange }) => {
   const ranges = geoData.features.reduce(
     (acc, feature) => {
       const { avg_price, total_price, total_transactions } = feature.properties;
@@ -26,21 +25,23 @@ const Filters = () => {
     }
   );
 
-  // State for slider ranges
-  const [avg_price, setRange1] = useState([ranges.avg_price.min, ranges.avg_price.max]); 
-  const [total_price, setRange2] = useState([ranges.total_price.min, ranges.total_price.max]); 
+  const [avg_price, setRange1] = useState([ranges.avg_price.min, ranges.avg_price.max]);
+  const [total_price, setRange2] = useState([ranges.total_price.min, ranges.total_price.max]);
   const [total_transactions, setRange3] = useState([ranges.total_transactions.min, ranges.total_transactions.max]);
 
-  // Function to filter counties based on current slider values
-  const filteredCounties = geoData.features.filter(feature => {
-    const { avg_price: avg, total_price: total, total_transactions: transactions } = feature.properties;
+  useEffect(() => {
+    const filteredCounties = geoData.features.filter(feature => {
+      const { avg_price: avg, total_price: total, total_transactions: transactions } = feature.properties;
 
-    return (
-      avg >= avg_price[0] && avg <= avg_price[1] &&
-      total >= total_price[0] && total <= total_price[1] &&
-      transactions >= total_transactions[0] && transactions <= total_transactions[1]
-    );
-  });
+      return (
+        avg >= avg_price[0] && avg <= avg_price[1] &&
+        total >= total_price[0] && total <= total_price[1] &&
+        transactions >= total_transactions[0] && transactions <= total_transactions[1]
+      );
+    });
+
+    onFilterChange(filteredCounties);
+  }, [avg_price, total_price, total_transactions]);
 
   return (
     <div className="p-4">
@@ -69,15 +70,6 @@ const Filters = () => {
           max={ranges.total_transactions.max}
           onChange={(newRange) => setRange3(newRange)}
         />
-      </div>
-
-      <div className="mt-4">
-        <h3>Filtered Counties</h3>
-        <ul>
-          {filteredCounties.map((feature, index) => (
-            <li key={index}>{feature.properties.NAME}</li>
-          ))}
-        </ul>
       </div>
     </div>
   );

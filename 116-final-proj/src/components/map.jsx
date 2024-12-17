@@ -6,7 +6,7 @@ import geoData from './counties_with_real_estate.json';
 import MapTooltip from "@/components/utils/map_tooltip";
 import { Switch } from '@headlessui/react';
 
-export default function MapVis({ onBrush, height = 525 }) {
+export default function MapVis({ onBrush, filteredCounties }) {
   const [tooltipContent, setTooltipContent] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [isBrush1Active, setIsBrush1Active] = useState(true);
@@ -19,6 +19,7 @@ export default function MapVis({ onBrush, height = 525 }) {
 
   useEffect(() => {
     const width = 800;
+    const height = 525;
 
     const svg = d3.select('#map')
       .attr('width', '100%')
@@ -81,6 +82,10 @@ export default function MapVis({ onBrush, height = 525 }) {
         } else {
           const isInBrush1 = brush1Selection && isRegionInSelection(region, brush1Selection);
           const isInBrush2 = brush2Selection && isRegionInSelection(region, brush2Selection);
+
+          // console.log(typeof(filteredCounties))
+          const inFilter = filteredCounties.includes(region)
+          if (inFilter) return "#800080"
           
           if (isInBrush1 && isInBrush2) return "#800080"; // Purple for overlap
           if (isInBrush1) return "#ff6347"; // Red for brush 1

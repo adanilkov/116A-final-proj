@@ -14,6 +14,12 @@ export default function Home() {
     setPreviewToggled((prev) => !prev);
   };
 
+  const [filteredCounties, setFilteredCounties] = useState([]);
+
+  const handleFilterChange = (filtered) => {
+    setFilteredCounties(filtered);
+  };
+
   return (
     <div className="grid grid-rows-[auto_1fr_auto] min-h-screen p-4 sm:p-10 gap-6 font-luxury bg-base-100 text-black">
       {/* Header with Title */}
@@ -63,7 +69,7 @@ export default function Home() {
               <h2 className="text-2xl font-sans font-light mb-4 text-neutral">
                 Heatmap Filters
               </h2>
-              <Filters/>
+              <Filters onFilterChange={handleFilterChange}/>
             </div>
           </div>
         </div>
@@ -78,7 +84,7 @@ export default function Home() {
       </section>
 
       {/* LinkedVisualization Component */}
-      <LinkedVis />
+      <LinkedVis filteredCounties={filteredCounties} />
 
       {/* Footer */}
       <footer className="row-start-4 text-center mt-8">
