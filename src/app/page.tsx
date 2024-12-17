@@ -85,6 +85,37 @@ export default function Home() {
       {/* LinkedVisualization Component */}
       <LinkedVis filteredCounties={filteredCounties} previewToggled={previewToggled} />
 
+      {/* Video Section */}
+      <section className="bg-white rounded-lg shadow-xl p-4 mb-6">
+        <h2 className="text-2xl font-sans font-light mb-4 text-neutral">
+         Project Video
+        </h2>
+        <div className="w-full aspect-video flex justify-center items-center rounded-lg overflow-hidden">
+        <iframe 
+      width="100%"
+      height="100%"
+      src="https://www.youtube.com/embed/7whopGv3bZA"
+      title="Project Video"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowFullScreen
+      className="border-none"
+    />
+  </div>
+</section>
+      {/* Google Doc Section */}
+  <section className="bg-white rounded-lg shadow-xl p-4 mb-6">
+  <h2 className="text-2xl font-sans font-light mb-4 text-neutral">
+    Project Documentation
+  </h2>
+  <div className="w-full h-[800px] overflow-hidden rounded-lg flex justify-center items-center">
+    <iframe 
+      className="w-[850px] h-full border-none" 
+      src="https://docs.google.com/document/d/e/2PACX-1vQsxKoo5W22BoqPcXUINZmrKlu5CuPCIQ1Ce_yapHXX9clAnSJMWpfRKse2GXePT5odF73ulO-9Gnuw/pub?embedded=true"
+    />
+  </div>
+</section>
+
+
       {/* Footer */}
       <footer className="row-start-4 text-center mt-8">
         <a
@@ -103,6 +134,7 @@ export default function Home() {
           View Project on Github
         </a>
       </footer>
+      
     </div>
   );
 }
