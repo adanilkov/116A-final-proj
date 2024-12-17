@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 
-const TwoHandleSlider = ({ min = 0, max = 100, step = 1, onChange }) => {
+const TwoHandleSlider = ({ min = 0, max = 100, onChange }) => {
   const [values, setValues] = useState([min, max]);
   const sliderRef = useRef(null); // Ref for the slider container
 
