@@ -18,6 +18,9 @@ export default function MapVis({ onBrush, height = 525 }) {
   const [brush2States, setBrush2States] = useState(new Set());
   const [isStateMode, setIsStateMode] = useState(false);
 
+  // Get filtered counties context at the component level
+  const { filteredCounties } = useFilteredCounties();
+
   useEffect(() => {
     const width = 800;
 
@@ -29,8 +32,6 @@ export default function MapVis({ onBrush, height = 525 }) {
 
     svg.selectAll(".zoom-container").remove();
     svg.selectAll(".brush-container").remove();
-    svg.selectAll(".zoom-container")
-      .attr('transform', `translate(${width / 2}, ${height / 2})`);
 
     const zoomContainer = svg.append("g").attr("class", "zoom-container");
     const brushContainer = svg.append("g").attr("class", "brush-container");
@@ -39,17 +40,53 @@ export default function MapVis({ onBrush, height = 525 }) {
     const projection = d3.geoAlbersUsa().fitSize([width, h], geoData);
     const pathGenerator = d3.geoPath().projection(projection);
 
-    // Centering the map
-    // const translate = [width / 2.2, height / 2.2];
+    const getRegionFill = (region) => {
+      if (isStateMode) {
+        // State mode logic remains the same
+        const isInBrush1States = brush1States.has(region.properties.STATEFP);
+        const isInBrush2States = brush2States.has(region.properties.STATEFP);
+        
+        if (isInBrush1States && isInBrush2States) return "#800080";
+        if (isInBrush1States) return "#ff6347";
+        if (isInBrush2States) return "#4682b4";
+        return "#FFFFFF";
+      } else {
+        // County mode logic - Fix the filtering check
+        const isInBrush1 = brush1Selection && isRegionInSelection(region, brush1Selection);
+        const isInBrush2 = brush2Selection && isRegionInSelection(region, brush2Selection);
+    
+        // Modified filtering check to match exact county
+        const isFiltered = filteredCounties.some(
+          (county) => 
+            county.properties.STATEFP === region.properties.STATEFP &&
+            county.properties.NAME === region.properties.NAME
+        );
+    
+        if (isFiltered) return "#00FF00";
+        if (isInBrush1 && isInBrush2) return "#800080";
+        if (isInBrush1) return "#ff6347";
+        if (isInBrush2) return "#4682b4";
+        return "#FFFFFF";
+      }
+    };
+
+    const isRegionInSelection = (region, selection) => {
+      const centroid = projection(d3.geoCentroid(region));
+      const [[x0, y0], [x1, y1]] = selection;
+      return centroid &&
+             centroid[0] >= x0 &&
+             centroid[0] <= x1 &&
+             centroid[1] >= y0 &&
+             centroid[1] <= y1;
+    };
 
     const mapPaths = zoomContainer.selectAll("path")
       .data(geoData.features)
       .join("path")
       .attr("d", pathGenerator)
-      .attr("fill", "#FFFFFF")
+      .attr("fill", getRegionFill)
       .attr("stroke", "#555")
       .attr("stroke-width", 0.5)
-      // .attr("transform", `translate(${translate})`)
       .on("mouseover", function (event, d) {
         d3.select(this).attr("fill", "#ffcc00");
         setTooltipContent({
@@ -65,53 +102,14 @@ export default function MapVis({ onBrush, height = 525 }) {
       })
       .on("mouseout", function () {
         const d = d3.select(this).datum();
-        const fill = getRegionFill(d);
-        d3.select(this).attr("fill", fill);
+        d3.select(this).attr("fill", getRegionFill(d));
         setTooltipContent(null);
       });
-
-      const getRegionFill = (region) => {
-        const { filteredCounties, avg_price, total_price, total_transactions, setAvgPrice, setTotalPrice, setTotalTransactions } = useFilteredCounties();
-        if (isStateMode) {
-          const isInBrush1States = brush1States.has(region.properties.STATEFP);
-          const isInBrush2States = brush2States.has(region.properties.STATEFP);
-          
-          if (isInBrush1States && isInBrush2States) return "#800080"; // Purple for overlap
-          if (isInBrush1States) return "#ff6347"; // Red for brush 1
-          if (isInBrush2States) return "#4682b4"; // Blue for brush 2
-          return "#FFFFFF"; // Default white
-        } else {
-          const isInBrush1 = brush1Selection && isRegionInSelection(region, brush1Selection);
-          const isInBrush2 = brush2Selection && isRegionInSelection(region, brush2Selection);
-
-          const isFiltered = filteredCounties.some(
-            (county) => county.properties.STATEFP === region.properties.STATEFP
-          );
-
-          if (isFiltered) return "#00FF00";
-          
-          if (isInBrush1 && isInBrush2) return "#800080"; // Purple for overlap
-          if (isInBrush1) return "#ff6347"; // Red for brush 1
-          if (isInBrush2) return "#4682b4"; // Blue for brush 2
-          return "#FFFFFF"; // Default white
-        }
-      };
-
-    const isRegionInSelection = (region, selection) => {
-      const centroid = projection(d3.geoCentroid(region));
-      const [[x0, y0], [x1, y1]] = selection;
-      return centroid &&
-             centroid[0] >= x0 &&
-             centroid[0] <= x1 &&
-             centroid[1] >= y0 &&
-             centroid[1] <= y1;
-    };
 
     const updateMapColors = () => {
       mapPaths.attr("fill", d => getRegionFill(d));
     };
 
-    // Update the brush handlers
     const handleBrush = (event, brushNumber) => {
       const selection = event.selection;
       if (!selection) {
@@ -122,7 +120,6 @@ export default function MapVis({ onBrush, height = 525 }) {
       const [[x0, y0], [x1, y1]] = selection;
     
       if (isStateMode) {
-        // Find all states in the current brush
         const targetStateFps = new Set();
         geoData.features.forEach(feature => {
           const centroid = projection(d3.geoCentroid(feature));
@@ -135,14 +132,11 @@ export default function MapVis({ onBrush, height = 525 }) {
           }
         });
     
-        // Get the current stored states
         const currentStates = brushNumber === 1 ? brush1States : brush2States;
         targetStateFps.forEach(state => currentStates.add(state));
     
-        // Update all region colors
-        mapPaths.attr("fill", d => getRegionFill(d));
+        updateMapColors();
       } else {
-        // Original county-based brushing logic
         mapPaths.attr("fill", d => {
           const centroid = projection(d3.geoCentroid(d));
           if (!centroid) return "#FFFFFF";
@@ -167,8 +161,7 @@ export default function MapVis({ onBrush, height = 525 }) {
         });
       }
     };
-    
-    // Update handleBrushEnd function
+
     const handleBrushEnd = (event, brushNumber) => {
       const selection = event.selection;
       if (!selection) {
@@ -190,7 +183,6 @@ export default function MapVis({ onBrush, height = 525 }) {
       let selectedRegions;
     
       if (isStateMode) {
-        // Get all states in the brush selection
         const newStates = new Set();
         geoData.features.forEach(feature => {
           const centroid = projection(d3.geoCentroid(feature));
@@ -203,19 +195,16 @@ export default function MapVis({ onBrush, height = 525 }) {
           }
         });
     
-        // Update the appropriate brush's state set
         if (brushNumber === 1) {
           setBrush1States(new Set([...brush1States, ...newStates]));
         } else {
           setBrush2States(new Set([...brush2States, ...newStates]));
         }
     
-        // Select all counties in all selected states
         const stateSet = brushNumber === 1 ? brush1States : brush2States;
         newStates.forEach(state => stateSet.add(state));
         selectedRegions = geoData.features.filter(d => stateSet.has(d.properties.STATEFP));
       } else {
-        // Normal county-based selection
         selectedRegions = geoData.features.filter(d => isRegionInSelection(d, selection));
       }
     
@@ -274,8 +263,8 @@ export default function MapVis({ onBrush, height = 525 }) {
       svg.on(".zoom", null);
       brushContainer.selectAll("*").remove();
     };
-  }, [isZoomMode, isBrush1Active, brush1Selection, brush2Selection, brush1States, brush2States, isStateMode]);
-  
+  }, [isZoomMode, isBrush1Active, brush1Selection, brush2Selection, brush1States, brush2States, isStateMode, filteredCounties, height, onBrush]);
+
   return (
     <div className="map-container relative border border-gray-300 p-4 bg-base-200 rounded-xl">
       <svg id="map" className="w-full h-auto"></svg>
