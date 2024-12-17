@@ -1,7 +1,6 @@
 "use client"
 
 import Image from "next/image";
-import Dropdown from "@/components/dropdown";
 import LinkedVis from "@/components/LinkedVisualization";
 // import CountyTable from "@/components/tablevis";
 import { useState } from "react";
