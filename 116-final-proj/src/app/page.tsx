@@ -41,7 +41,7 @@ export default function Home() {
         {/* Left: Map Visualization */}
         <div className="flex items-stretch justify-center space-x-4 h-[80vh]">
         <div
-          className={`flex-grow transition-all duration-500 ease-in-out bg-white rounded-lg shadow-xl p-4 h-[80vh] ${previewToggled ? "w-[70%]" : "w-full"}`}
+          className={`flex-grow transition-all duration-500 ease-in-out bg-white rounded-lg shadow-xl p-4 h-[85vh] ${previewToggled ? "w-[70%]" : "w-full"}`}
         >
           <div className="text-2xl flex font-sans font-light mb-4 text-neutral w-full justify-between items-center">
             Geographical Analysis
