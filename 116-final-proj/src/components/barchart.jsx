@@ -25,55 +25,22 @@ const SegmentedBarChart = ({ data = [] }) => {
       return;
     }
 
-    const formatMoney = value => {
-      const absValue = Math.abs(value);
-      if(absValue >= 1e12){
-        const trillions = (value / 1e12).toFixed(1)
-        return `$${trillions}T`; // For Trillions
-      } else if (absValue >= 1e9) {
-        const billions = (value / 1e9).toFixed(1);
-        return `$${billions}B`; // For billions
-      } else if (absValue >= 1e6) {
-        const millions = Math.round(value / 1e6);
-        return `$${millions}M`; // For millions
-      } else if (absValue >= 1e3) {
-        const thousands = Math.round(value / 1e3);
-        return `$${thousands}K`; // For thousands
-      }
-      return d3.format('$,.0f')(value); // For values less than 1000
-    };
-    
-    // Update the metrics array to use the custom format for money-related metrics
+    // Process data for each metric
     const metrics = [
-      { 
-        key: 'avg_price', 
-        label: 'Average Price', 
-        format: value => formatMoney(value)
-      },
-      { 
-        key: 'total_transactions', 
-        label: 'Total Transactions', 
-        format: ',.0f' 
-      },
-      { 
-        key: 'total_price', 
-        label: 'Total Price', 
-        format: value => formatMoney(value)
-      }
+      { key: 'avg_price', label: 'Average Price', format: '$.2s' },
+      { key: 'total_transactions', label: 'Total Transactions', format: ',.0f' },
+      { key: 'total_price', label: 'Total Price', format: '$.2s' }
     ];
 
     const processedData = metrics.map(metric => {
       const aggregated = d3.rollup(data,
         v => ({
-          // Use sum for totals, mean for averages
-          value: metric.key === 'avg_price' 
-            ? d3.mean(v, d => d[metric.key])
-            : d3.sum(v, d => d[metric.key]),
+          value: d3.mean(v, d => d[metric.key]),
           count: v.length
         }),
         d => d.brushNumber
       );
-    
+
       return {
         metric: metric.key,
         label: metric.label,
@@ -128,9 +95,7 @@ const SegmentedBarChart = ({ data = [] }) => {
 
       // Axes
       const yAxis = d3.axisLeft(yScale)
-        .tickFormat(d => typeof metricData.format === 'function' 
-          ? metricData.format(d) 
-          : d3.format(metricData.format)(d))
+        .tickFormat(d => d3.format(metricData.format)(d))
         .ticks(5);
       
       const xAxis = d3.axisBottom(xScale);
@@ -173,9 +138,7 @@ const SegmentedBarChart = ({ data = [] }) => {
         .attr('text-anchor', 'middle')
         .style('fill', 'black')
         .style('font-size', '12px')
-        .text(d => typeof metricData.format === 'function' 
-          ? metricData.format(d.value) 
-          : d3.format(metricData.format)(d.value));
+        .text(d => d3.format(metricData.format)(d.value));
 
       // Animate bars
       bars.transition()
