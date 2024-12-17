@@ -5,7 +5,6 @@ import * as d3 from "d3";
 import geoData from './counties_with_real_estate.json';
 import MapTooltip from "@/components/utils/map_tooltip";
 import { Switch } from '@headlessui/react';
-import { useFilteredCounties } from "./utils/filtered_counties";
 
 export default function MapVis({ onBrush, height = 525 }) {
   const [tooltipContent, setTooltipContent] = useState(null);
@@ -14,6 +13,7 @@ export default function MapVis({ onBrush, height = 525 }) {
   const [isZoomMode, setIsZoomMode] = useState(true);
   const [brush1Selection, setBrush1Selection] = useState(null);
   const [brush2Selection, setBrush2Selection] = useState(null);
+  const isStateMode = false
 
   useEffect(() => {
     const width = 800;
@@ -68,7 +68,6 @@ export default function MapVis({ onBrush, height = 525 }) {
       });
 
       const getRegionFill = (region) => {
-        const { filteredCounties, avg_price, total_price, total_transactions, setAvgPrice, setTotalPrice, setTotalTransactions } = useFilteredCounties();
         if (isStateMode) {
           const isInBrush1States = brush1States.has(region.properties.STATEFP);
           const isInBrush2States = brush2States.has(region.properties.STATEFP);
@@ -81,11 +80,11 @@ export default function MapVis({ onBrush, height = 525 }) {
           const isInBrush1 = brush1Selection && isRegionInSelection(region, brush1Selection);
           const isInBrush2 = brush2Selection && isRegionInSelection(region, brush2Selection);
 
-          const isFiltered = filteredCounties.some(
-            (county) => county.properties.STATEFP === region.properties.STATEFP
-          );
+          // const isFiltered = filteredCounties.some(
+          //   (county) => county.properties.STATEFP === region.properties.STATEFP
+          // );
 
-          if (isFiltered) return "#00FF00";
+          // if (isFiltered) return "#00FF00";
           
           if (isInBrush1 && isInBrush2) return "#800080"; // Purple for overlap
           if (isInBrush1) return "#ff6347"; // Red for brush 1
