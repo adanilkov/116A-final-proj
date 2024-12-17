@@ -5,6 +5,7 @@ import * as d3 from "d3";
 import geoData from './counties_with_real_estate.json';
 import MapTooltip from "@/components/utils/map_tooltip";
 import { Switch } from '@headlessui/react';
+import { useFilteredCounties } from "./utils/filtered_counties";
 
 export default function MapVis({ onBrush, height = 525 }) {
   const [tooltipContent, setTooltipContent] = useState(null);
@@ -70,6 +71,7 @@ export default function MapVis({ onBrush, height = 525 }) {
       });
 
       const getRegionFill = (region) => {
+        const { filteredCounties, avg_price, total_price, total_transactions, setAvgPrice, setTotalPrice, setTotalTransactions } = useFilteredCounties();
         if (isStateMode) {
           const isInBrush1States = brush1States.has(region.properties.STATEFP);
           const isInBrush2States = brush2States.has(region.properties.STATEFP);
@@ -81,6 +83,12 @@ export default function MapVis({ onBrush, height = 525 }) {
         } else {
           const isInBrush1 = brush1Selection && isRegionInSelection(region, brush1Selection);
           const isInBrush2 = brush2Selection && isRegionInSelection(region, brush2Selection);
+
+          const isFiltered = filteredCounties.some(
+            (county) => county.properties.STATEFP === region.properties.STATEFP
+          );
+
+          if (isFiltered) return "#00FF00";
           
           if (isInBrush1 && isInBrush2) return "#800080"; // Purple for overlap
           if (isInBrush1) return "#ff6347"; // Red for brush 1
@@ -274,11 +282,11 @@ export default function MapVis({ onBrush, height = 525 }) {
       {tooltipContent && (
         <MapTooltip tooltipContent={tooltipContent} position={tooltipPosition} />
       )}
-      <div className="mt-4 flex items-center gap-4">
+      <div className="mt-4 flex items-center gap-4 h-8">
         <Switch
           checked={isZoomMode}
           onChange={setIsZoomMode}
-          className={`${isZoomMode ? 'bg-green-400' : 'bg-blue-400'} 
+          className={`${isZoomMode ? 'bg-primary' : 'bg-accent'} 
                       relative inline-flex items-center h-6 rounded-full w-11`}
         >
           <span className="sr-only">Toggle between Zoom and Brush mode</span>
@@ -288,14 +296,14 @@ export default function MapVis({ onBrush, height = 525 }) {
             } inline-block w-4 h-4 transform bg-white rounded-full transition-transform`}
           />
         </Switch>
-        <span>{isZoomMode ? "View Mode" : "Insight Mode"}</span>
+        <span>{isZoomMode ? "Toggle View Mode" : "Toggle Insight Mode"}</span>
         {!isZoomMode && (
           <>
             <div className="ml-4">
               <Switch
                 checked={isBrush1Active}
                 onChange={setIsBrush1Active}
-                className={`${isBrush1Active ? 'bg-orange-400' : 'bg-blue-400'} 
+                className={`${isBrush1Active ? 'bg-orange-400' : 'bg-accent'} 
                            relative inline-flex items-center h-6 rounded-full w-11`}
               >
                 <span className="sr-only">Toggle between Brush 1 and Brush 2</span>
@@ -305,7 +313,7 @@ export default function MapVis({ onBrush, height = 525 }) {
                   } inline-block w-4 h-4 transform bg-white rounded-full transition-transform`}
                 />
               </Switch>
-              <span className="ml-2">{isBrush1Active ? "Brush 1 Active" : "Brush 2 Active"}</span>
+              <span className="ml-2">{isBrush1Active ? "Toggle Brush 1" : "Toggle Brush 2"}</span>
             </div>
             <div className="ml-4">
               <Switch

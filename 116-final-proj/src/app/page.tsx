@@ -5,8 +5,8 @@ import Dropdown from "@/components/dropdown";
 import LinkedVis from "@/components/LinkedVisualization";
 // import CountyTable from "@/components/tablevis";
 import { useState } from "react";
-import MapVis from "@/components/map";
 import Filters from "@/components/filters"
+import { FilteredCountiesProvider } from "@/components/utils/filtered_counties";
 
 export default function Home() {
   const [previewToggled, setPreviewToggled] = useState(false);
@@ -64,7 +64,9 @@ export default function Home() {
               <h2 className="text-2xl font-sans font-light mb-4 text-neutral">
                 Heatmap Filters
               </h2>
-              <Filters/>
+              <FilteredCountiesProvider>
+                <Filters/>
+              </FilteredCountiesProvider>
             </div>
           </div>
         </div>

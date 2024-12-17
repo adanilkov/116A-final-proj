@@ -59,7 +59,7 @@ const TwoHandleSlider = ({ min = 0, max = 100, step = 1, onChange }) => {
           style={{ left: `${((values[0] - min) / (max - min)) * 100}%` }}
           onMouseDown={(e) => handleMouseDown(e, 0)}
         >
-          <div className="tooltip w-full h-full overflow-visible" data-tip={values[0]}></div>
+          <div className="tooltip w-full h-full overflow-visible" data-tip={values[0].toLocaleString(undefined, { maximumFractionDigits: 0 })}></div>
         </div>
 
         {/* Handle 2 */}
@@ -68,7 +68,7 @@ const TwoHandleSlider = ({ min = 0, max = 100, step = 1, onChange }) => {
           style={{ left: `${((values[1] - min) / (max - min)) * 100}%` }}
           onMouseDown={(e) => handleMouseDown(e, 1)}
         >
-          <div className="tooltip w-full h-full overflow-visible" data-tip={values[1]}></div>
+          <div className="tooltip w-full h-full overflow-visible" data-tip={values[1].toLocaleString(undefined, { maximumFractionDigits: 0 })}></div>
         </div>
       </div>
     </div>
